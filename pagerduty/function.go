@@ -163,12 +163,12 @@ func (m Module) SetDefaultNotification(id string) error {
 	return err
 }
 
-func (m Module) ListUser() []pager.User {
+func (m Module) ListUser(userCondition int) []pager.User {
 
 	var (
 		offset int
-		i      int
-		users  []pager.User
+
+		users []pager.User
 	)
 
 	for {
@@ -182,13 +182,18 @@ func (m Module) ListUser() []pager.User {
 			panic(err)
 		}
 
-		fmt.Println(len(lur.Users))
-
 		for _, u := range lur.Users {
-			i += 1
-			if len(u.ContactMethods) < 2 {
-				fmt.Printf("%d => %s\n", i, u.Email)
+
+			switch userCondition {
+			case ConstAllUser:
 				users = append(users, u)
+			case ConstUserHasNotBeenValidated:
+				if len(u.ContactMethods) < 2 {
+					users = append(users, u)
+				}
+			default:
+				fmt.Println("Please set the condition !!!")
+				return users
 			}
 
 		}

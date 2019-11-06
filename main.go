@@ -37,9 +37,15 @@ func TestCase1(m pagerduty.Module) {
 }
 
 // List of User who not open the link sent by admin
+//  ConstAllUser 					=> Get All User
+//  ConstUserHasNotBeenValidated 	=> Get User  Has Not Been Validated / Not Enter Phone Number / Not Install the Apps
 func TestCase2(m pagerduty.Module) {
-	users := m.ListUser()
-	fmt.Println(users)
+
+	users := m.ListUser(pagerduty.ConstAllUser)
+	for i, u := range users {
+		fmt.Printf("%d => %s\n", i+1, u.Email)
+	}
+
 }
 
 // Set Notif Rule For the user
