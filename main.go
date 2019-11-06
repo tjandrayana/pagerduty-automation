@@ -50,8 +50,8 @@ func TestCase2(m pagerduty.Module) {
 
 // Set Notif Rule For the user
 func TestCase3(m pagerduty.Module) {
-	alvinID := "P1UUNX1"
-	if err := m.SetDefaultNotification(alvinID); err != nil {
+	id := "XXXXX"
+	if err := m.SetDefaultNotification(id); err != nil {
 		log.Println(err)
 		panic(err)
 	}
