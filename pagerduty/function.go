@@ -181,13 +181,13 @@ func (m Module) ListUser(query string, userCondition int) ([]pager.User, error) 
 				hasSMS := false
 				hasPushNotif := false
 				for _, w := range u.ContactMethods {
-					if w.Type == "phone_contact_method_reference" {
+					if w.Type == "phone_contact_method" {
 						hasPhone = true
 					}
-					if w.Type == "sms_contact_method_reference" {
+					if w.Type == "sms_contact_method" {
 						hasSMS = true
 					}
-					if w.Type == "push_notification_contact_method_reference" {
+					if w.Type == "push_notification_contact_method" {
 						hasPushNotif = true
 					}
 				}
