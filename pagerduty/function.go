@@ -11,19 +11,17 @@ import (
 )
 
 func (m Module) GetTeamDetailByName(teamName string) []pager.Team {
-
 	var team TeamQueryResult
-	address := "https://api.pagerduty.com"
 	path := "teams"
 
 	header := make(map[string]string)
-	header["Accept"] = "application/vnd.pagerduty+json;version=2"
+	header["Accept"] = HeaderAccept
 	header["Authorization"] = fmt.Sprintf("Token token=%s", m.Token)
 	params := url.Values{}
 	params.Add("query", teamName)
 
 	agent := httpreq.NewHTTPRequest()
-	agent.Url = address
+	agent.Url = PagerDutyURL
 	agent.Path = path
 	agent.Method = "GET"
 	agent.Headers = header
@@ -50,11 +48,9 @@ func (m Module) GetTeamDetailByName(teamName string) []pager.Team {
 func (m Module) CreateUser(detail pager.User) (*pager.User, error) {
 	user, err := m.Client.CreateUser(detail)
 	if err != nil {
-		log.Println(err)
 		return user, err
 	}
 
-	fmt.Println("success")
 	return user, err
 }
 
@@ -62,15 +58,14 @@ func (m Module) CreateUserNotificationRules(id string, detail pager.Notification
 	notif := Notification{
 		detail,
 	}
-	address := "https://api.pagerduty.com"
 	path := "users/" + id + "/notification_rules"
 
 	header := make(map[string]string)
-	header["Accept"] = "application/vnd.pagerduty+json;version=2"
+	header["Accept"] = HeaderAccept
 	header["Authorization"] = fmt.Sprintf("Token token=%s", m.Token)
 
 	agent := httpreq.NewHTTPRequest()
-	agent.Url = address
+	agent.Url = PagerDutyURL
 	agent.Path = path
 	agent.Method = "POST"
 	agent.Headers = header
@@ -98,15 +93,14 @@ func (m Module) CreateUserNotificationRules(id string, detail pager.Notification
 func (m Module) GetUserContactMethods(id string) []pager.ContactMethod {
 
 	var contact ContactMethodQueryResult
-	address := "https://api.pagerduty.com"
 	path := "users/" + id + "/contact_methods"
 
 	header := make(map[string]string)
-	header["Accept"] = "application/vnd.pagerduty+json;version=2"
+	header["Accept"] = HeaderAccept
 	header["Authorization"] = fmt.Sprintf("Token token=%s", m.Token)
 
 	agent := httpreq.NewHTTPRequest()
-	agent.Url = address
+	agent.Url = PagerDutyURL
 	agent.Path = path
 	agent.Method = "GET"
 	agent.Headers = header
@@ -139,12 +133,9 @@ func (m Module) SetDefaultNotification(id string) error {
 		}
 	}
 
-	cJ, _ := json.Marshal(contact)
-	fmt.Println(string(cJ))
-
-	setnot, err := m.CreateUserNotificationRules(id, pager.NotificationRule{
+	_, err := m.CreateUserNotificationRules(id, pager.NotificationRule{
 		Type:                "assignment_notification_rule",
-		StartDelayInMinutes: 8,
+		StartDelayInMinutes: 16,
 		ContactMethod: pager.ContactMethod{
 			ID:      mcontact["phone_contact_method"],
 			Type:    "phone_contact_method",
@@ -158,12 +149,10 @@ func (m Module) SetDefaultNotification(id string) error {
 		return err
 	}
 
-	sn, _ := json.Marshal(setnot)
-	fmt.Println(string(sn))
 	return err
 }
 
-func (m Module) ListUser(query string, userCondition int) []pager.User {
+func (m Module) ListUser(query string, userCondition int) ([]pager.User, error) {
 
 	var (
 		offset int
@@ -180,7 +169,7 @@ func (m Module) ListUser(query string, userCondition int) []pager.User {
 			Query:    query,
 		})
 		if err != nil {
-			panic(err)
+			return users, err
 		}
 
 		for _, u := range lur.Users {
@@ -188,21 +177,34 @@ func (m Module) ListUser(query string, userCondition int) []pager.User {
 			case ConstAllUser:
 				users = append(users, u)
 			case ConstUserHasNotBeenValidated:
-				if len(u.ContactMethods) < 2 {
+				hasPhone := false
+				hasSMS := false
+				hasPushNotif := false
+				for _, w := range u.ContactMethods {
+					if w.Type == "phone_contact_method_reference" {
+						hasPhone = true
+					}
+					if w.Type == "sms_contact_method_reference" {
+						hasSMS = true
+					}
+					if w.Type == "push_notification_contact_method_reference" {
+						hasPushNotif = true
+					}
+				}
+
+				if !(hasPhone && hasSMS && hasPushNotif) {
 					users = append(users, u)
 				}
 			default:
-				fmt.Println("Please set the condition !!!")
-				return users
+				return users, fmt.Errorf("Please set the condition !!!")
 			}
 
 		}
-
 		if len(lur.Users) == 0 {
 			break
 		}
 		offset += 100
 	}
 
-	return users
+	return users, nil
 }

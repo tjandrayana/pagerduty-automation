@@ -7,8 +7,7 @@ type Module struct {
 	Client *pager.Client
 }
 
-func Init() Module {
-	token := "CEs_sysoX1tm5Wur8S8h"
+func Init(token string) Module {
 	return Module{
 		Token:  token,
 		Client: pager.NewClient(token),
