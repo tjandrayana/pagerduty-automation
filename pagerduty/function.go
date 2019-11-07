@@ -163,12 +163,11 @@ func (m Module) SetDefaultNotification(id string) error {
 	return err
 }
 
-func (m Module) ListUser(userCondition int) []pager.User {
+func (m Module) ListUser(query string, userCondition int) []pager.User {
 
 	var (
 		offset int
-
-		users []pager.User
+		users  []pager.User
 	)
 
 	for {
@@ -177,13 +176,14 @@ func (m Module) ListUser(userCondition int) []pager.User {
 				Limit:  100,
 				Offset: uint(offset),
 			},
+			Includes: []string{"contact_methods"},
+			Query:    query,
 		})
 		if err != nil {
 			panic(err)
 		}
 
 		for _, u := range lur.Users {
-
 			switch userCondition {
 			case ConstAllUser:
 				users = append(users, u)

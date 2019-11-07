@@ -8,7 +8,7 @@ type Module struct {
 }
 
 func Init() Module {
-	token := "pager_duty_token"
+	token := "CEs_sysoX1tm5Wur8S8h"
 	return Module{
 		Token:  token,
 		Client: pager.NewClient(token),
