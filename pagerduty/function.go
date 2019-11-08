@@ -125,31 +125,113 @@ func (m Module) GetUserContactMethods(id string) []pager.ContactMethod {
 
 func (m Module) SetDefaultNotification(id string) error {
 	contact := m.GetUserContactMethods(id)
-	mcontact := make(map[string]string)
+	mcontact := make(map[string]pager.ContactMethod)
 
 	if len(contact) > 0 {
 		for _, c := range contact {
-			mcontact[c.Type] = c.ID
+			mcontact[c.Type] = c
 		}
 	}
 
-	_, err := m.CreateUserNotificationRules(id, pager.NotificationRule{
-		Type:                "assignment_notification_rule",
-		StartDelayInMinutes: 16,
-		ContactMethod: pager.ContactMethod{
-			ID:      mcontact["phone_contact_method"],
-			Type:    "phone_contact_method",
-			Summary: "Mobile",
+	defaultTemplate := []pager.NotificationRule{
+		pager.NotificationRule{
+			Type:                ConstAssignmentNotificationRule,
+			StartDelayInMinutes: 0,
+			ContactMethod: pager.ContactMethod{
+				ID:      mcontact[ConstPushNotificationContactMethod].ID,
+				Type:    ConstPushNotificationContactMethod,
+				Summary: mcontact[ConstPushNotificationContactMethod].Label,
+			},
+			Urgency: "high",
 		},
-
-		Urgency: "high",
-	})
-	if err != nil {
-		fmt.Println(err)
-		return err
+		pager.NotificationRule{
+			Type:                ConstAssignmentNotificationRule,
+			StartDelayInMinutes: 1,
+			ContactMethod: pager.ContactMethod{
+				ID:      mcontact[ConstPushNotificationContactMethod].ID,
+				Type:    ConstPushNotificationContactMethod,
+				Summary: mcontact[ConstPushNotificationContactMethod].Label,
+			},
+			Urgency: "high",
+		},
+		pager.NotificationRule{
+			Type:                ConstAssignmentNotificationRule,
+			StartDelayInMinutes: 2,
+			ContactMethod: pager.ContactMethod{
+				ID:      mcontact[ConstPushNotificationContactMethod].ID,
+				Type:    ConstPushNotificationContactMethod,
+				Summary: mcontact[ConstPushNotificationContactMethod].Label,
+			},
+			Urgency: "high",
+		},
+		pager.NotificationRule{
+			Type:                ConstAssignmentNotificationRule,
+			StartDelayInMinutes: 2,
+			ContactMethod: pager.ContactMethod{
+				ID:      mcontact[ConstSmsConstactMehtod].ID,
+				Type:    ConstSmsConstactMehtod,
+				Summary: mcontact[ConstSmsConstactMehtod].Label,
+			},
+			Urgency: "high",
+		},
+		pager.NotificationRule{
+			Type:                ConstAssignmentNotificationRule,
+			StartDelayInMinutes: 3,
+			ContactMethod: pager.ContactMethod{
+				ID:      mcontact[ConstPushNotificationContactMethod].ID,
+				Type:    ConstPushNotificationContactMethod,
+				Summary: mcontact[ConstPushNotificationContactMethod].Label,
+			},
+			Urgency: "high",
+		},
+		pager.NotificationRule{
+			Type:                ConstAssignmentNotificationRule,
+			StartDelayInMinutes: 3,
+			ContactMethod: pager.ContactMethod{
+				ID:      mcontact[ConstPhoneContactMethod].ID,
+				Type:    ConstPhoneContactMethod,
+				Summary: mcontact[ConstPhoneContactMethod].Label,
+			},
+			Urgency: "high",
+		},
+		pager.NotificationRule{
+			Type:                ConstAssignmentNotificationRule,
+			StartDelayInMinutes: 4,
+			ContactMethod: pager.ContactMethod{
+				ID:      mcontact[ConstPushNotificationContactMethod].ID,
+				Type:    ConstPushNotificationContactMethod,
+				Summary: mcontact[ConstPushNotificationContactMethod].Label,
+			},
+			Urgency: "high",
+		},
+		pager.NotificationRule{
+			Type:                ConstAssignmentNotificationRule,
+			StartDelayInMinutes: 0,
+			ContactMethod: pager.ContactMethod{
+				ID:      mcontact[ConstPushNotificationContactMethod].ID,
+				Type:    ConstPushNotificationContactMethod,
+				Summary: mcontact[ConstPushNotificationContactMethod].Label,
+			},
+			Urgency: "low",
+		},
 	}
 
-	return err
+	for i, n := range defaultTemplate {
+		if n.ContactMethod.ID == "" {
+			fmt.Printf("%d => set rules : %s for %d minutes failed -> %s not found\n", i+1, n.ContactMethod.Type, n.StartDelayInMinutes, n.Type)
+			continue
+		}
+
+		_, err := m.CreateUserNotificationRules(id, n)
+		if err != nil {
+			fmt.Printf("%d => set rules : %s for %d minutes failed -> %s error : %s\n", i+1, n.ContactMethod.Type, n.StartDelayInMinutes, n.Type, err.Error())
+			continue
+		}
+
+		fmt.Printf("%d => set rules : %s for %d minutes success\n", i+1, n.ContactMethod.Type, n.StartDelayInMinutes)
+	}
+
+	return nil
 }
 
 func (m Module) ListUser(query string, userCondition int) ([]pager.User, error) {

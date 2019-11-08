@@ -1,9 +1,9 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
-	"flag"
 	"strings"
 
 	pager "github.com/PagerDuty/go-pagerduty"
@@ -11,10 +11,8 @@ import (
 )
 
 const (
-	TYPE_USER = "user"
-	DEFAULT_TIMEZONE = "Asia/Jakarta"
-
-	PD_TOKEN = ""
+	TypeUser        = "user"
+	DefaultTimezone = "Asia/Jakarta"
 )
 
 type Arguments []string
@@ -22,9 +20,14 @@ type Arguments []string
 var m pagerduty.Module
 
 func main() {
-	var err error
+	var (
+		err error
+	)
+
+	PD_TOKEN := os.Getenv("PagerDutyToken")
+
 	m = pagerduty.Init(PD_TOKEN)
-	
+
 	// Get User Input Parameter
 	command, args := getCommand()
 
@@ -48,14 +51,32 @@ func main() {
 	os.Exit(0)
 }
 
-func getCommand() (string, []string) {
-	args := Arguments(os.Args)
-	if len(args) <= 1 {
-		return "", []string{}
-	}
-	return args[1], args[2:]
-}
+func getCommand() (string, map[string]string) {
 
+	var (
+		command            string
+		name, email, param string
+		role, job          string
+	)
+
+	flag.StringVar(&command, "command", "", "command")
+	flag.StringVar(&name, "name", "", "name")
+	flag.StringVar(&email, "email", "", "email")
+	flag.StringVar(&param, "param", "", "param")
+	flag.StringVar(&role, "role", "", "User Role")
+	flag.StringVar(&job, "job", "", "User Job")
+	flag.Parse()
+
+	ms := map[string]string{
+		"name":  name,
+		"email": email,
+		"param": param,
+		"role":  role,
+		"job":   job,
+	}
+
+	return command, ms
+}
 func help(about string) error {
 	if about == "create_user" {
 		fmt.Println("This is help page.")
@@ -66,29 +87,26 @@ func help(about string) error {
 	return nil
 }
 
-func createUser(args []string) error {
+func createUser(args map[string]string) error {
 	if len(args) < 2 {
 		return help("create_user")
 	}
 
-	var role, job string
-	flag.StringVar(&role, "role", "", "User Role")
-	flag.StringVar(&job, "job", "", "User Job")
-	flag.Parse()
-
-	name := args[0]
-	email := args[1]
+	role := args["role"]
+	job := args["job"]
+	name := args["name"]
+	email := args["email"]
 	if role == "" {
 		role = "limited_user"
 	}
 
 	user, err := m.CreateUser(pager.User{
-		Type:        TYPE_USER,
-		Name:        name,
-		Email:       email,
-		Timezone:    DEFAULT_TIMEZONE,
-		Role:        role,
-		JobTitle:    job,
+		Type:     TypeUser,
+		Name:     name,
+		Email:    email,
+		Timezone: DefaultTimezone,
+		Role:     role,
+		JobTitle: job,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to create new user because %s", err)
@@ -98,13 +116,13 @@ func createUser(args []string) error {
 	return nil
 }
 
-func getAllUsers(args []string) error {
+func getAllUsers(args map[string]string) error {
 	if len(args) < 1 {
 		return help("get_all_user")
 	}
 
 	userType := pagerduty.ConstAllUser
-	if args[0] == "miss" {
+	if args["param"] == "miss" {
 		userType = pagerduty.ConstUserHasNotBeenValidated
 	}
 
@@ -146,12 +164,12 @@ func getAllUsers(args []string) error {
 	return nil
 }
 
-func setNotificationRules(args []string) error {
+func setNotificationRules(args map[string]string) error {
 	if len(args) < 1 {
 		return help("set_notification_rules")
 	}
 
-	email := args[0]
+	email := args["email"]
 
 	users, err := m.ListUser(email, pagerduty.ConstAllUser)
 	if err != nil {
